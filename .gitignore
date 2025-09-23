@@ -1,0 +1,8 @@
+# Maven build directory
+target/
+
+# Compiled Java classes
+*.class
+
+# Log files
+*.log
