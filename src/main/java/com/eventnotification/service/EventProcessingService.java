@@ -2,6 +2,7 @@ package com.eventnotification.service;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.eventnotification.model.Event;
@@ -21,6 +22,9 @@ public class EventProcessingService {
 
     private final ConcurrentHashMap<EventType, BlockingQueue<Event>> queues = new ConcurrentHashMap<>();
     private final AtomicBoolean shutdown = new AtomicBoolean(false);
+
+    @Autowired
+    private CallbackService callbackService;
 
     /**
      * Check if system is accepting new events
@@ -54,6 +58,14 @@ public class EventProcessingService {
         }
         
         return added;
+    }
+
+    private void sendCallback(Event event) {
+        try {
+            callbackService.sendCallback(event);
+        } catch (Exception e) {
+            log.error("Failed to send callback for event {}: {}", event.getEventId(), e.getMessage(), e);
+        }
     }
 
 }

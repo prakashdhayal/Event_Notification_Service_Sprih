@@ -1,0 +1,7 @@
+server:
+  port: 8080
+
+# Application specific configurations
+app:
+  callback:
+    retry-attempts: 3
