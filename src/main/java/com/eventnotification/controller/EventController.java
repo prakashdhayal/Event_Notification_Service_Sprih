@@ -90,6 +90,60 @@ public class EventController {
         }
     }
 
+    /**
+     * Testing endpoint for receiving event processing callbacks
+     * Use this URL in your event requests: http://localhost:8080/api/test/callback
+     */
+    @PostMapping("/test/callback")
+    public ResponseEntity<?> receiveCallback(@RequestBody Map<String, Object> callbackPayload,
+                                           @RequestHeader Map<String, String> headers) {
+        
+        log.info("=== CALLBACK RECEIVED ===");
+        log.info("Headers: {}", headers);
+        log.info("Payload: {}", callbackPayload);
+        
+        // Extract common callback fields
+        String eventId = (String) callbackPayload.get("eventId");
+        String status = (String) callbackPayload.get("status");
+        String eventType = (String) callbackPayload.get("eventType");
+        
+        if (eventId != null && status != null) {
+            log.info("Event {} ({}) finished with status: {}", eventId, eventType, status);
+            
+            if ("COMPLETED".equals(status)) {
+                log.info("✅ Event {} processed successfully!", eventId);
+            } else if ("FAILED".equals(status)) {
+                String errorMessage = (String) callbackPayload.get("errorMessage");
+                log.warn("❌ Event {} failed: {}", eventId, errorMessage);
+            }
+        }
+        
+        log.info("========================");
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("received", true);
+        response.put("timestamp", System.currentTimeMillis());
+        response.put("message", "Callback processed successfully");
+        
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Simple health check endpoint to verify the callback URL is reachable
+     */
+    @GetMapping("/webhook/callback")
+    public ResponseEntity<?> callbackHealthCheck() {
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "UP");
+        response.put("message", "Callback webhook is ready to receive events");
+        response.put("endpoint", "POST /api/webhook/callback");
+        response.put("timestamp", System.currentTimeMillis());
+        
+        log.info("Callback health check accessed");
+        
+        return ResponseEntity.ok(response);
+    }
+
     private Map<String, Object> createErrorResponse(String message) {
         Map<String, Object> response = new HashMap<>();
         response.put("error", message);
