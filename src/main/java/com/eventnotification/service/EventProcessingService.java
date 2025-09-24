@@ -116,6 +116,11 @@ public class EventProcessingService {
      * Add an event to the appropriate queue for processing
      */
     public boolean addEvent(Event event) {
+        if (event == null) {
+            log.warn("Rejecting null event");
+            return false;
+        }
+        
         if (shutdown.get()) {
             log.warn("System is shutting down, rejecting new event: {}", event.getEventId());
             return false;
