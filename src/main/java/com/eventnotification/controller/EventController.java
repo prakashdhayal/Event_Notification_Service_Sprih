@@ -91,10 +91,10 @@ public class EventController {
     }
 
     /**
-     * Testing endpoint for receiving event processing callbacks
-     * Use this URL in your event requests: http://localhost:8080/api/test/callback
+     * webhook endpoint for receiving event processing callbacks
+     * Use this URL in your event requests: http://localhost:8080/api/webhook/callback
      */
-    @PostMapping("/test/callback")
+    @PostMapping("/webhook/callback")
     public ResponseEntity<?> receiveCallback(@RequestBody Map<String, Object> callbackPayload,
                                            @RequestHeader Map<String, String> headers) {
         
