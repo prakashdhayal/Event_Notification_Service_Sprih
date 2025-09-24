@@ -5,3 +5,20 @@ server:
 app:
   callback:
     retry-attempts: 3
+  event-processing:
+    failure-rate: 0.1        # 10% failure rate for testing
+    queue-capacity: 1000     # Maximum events per queue
+    thread-pool:
+      email: 2               # Email worker threads
+      sms: 2                 # SMS worker threads  
+      push: 2                # Push worker threads
+    processing-time:
+      email: 5               # seconds
+      sms: 3                 # seconds
+      push: 2                # seconds
+
+# Logging configuration
+logging:
+  level:
+    "[com.eventnotification]": INFO
+    root: WARN
