@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
+
 import java.util.Random;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -216,6 +218,63 @@ public class EventProcessingService {
             callbackService.sendCallback(event);
         } catch (Exception e) {
             log.error("Failed to send callback for event {}: {}", event.getEventId(), e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Gracefully shutdown the service
+     * Ensures ALL events in queues are processed before termination
+     */
+    @PreDestroy
+    public void shutdown() {
+        log.info("Starting graceful shutdown of Event Processing Service");
+        
+        // Stop accepting new events
+        shutdown.set(true);
+        log.info("Stopped accepting new events");
+        
+        // Log current queue sizes for visibility
+        logQueueSizes();
+        
+        // Shutdown all executors
+        for (EventType eventType : EventType.values()) {
+            ExecutorService executor = executors.get(eventType);
+            if (executor != null) {
+                executor.shutdown();
+                
+                try {
+                    log.info("Waiting for all {} events to complete processing...", eventType);
+                    while (!executor.awaitTermination(10, TimeUnit.SECONDS)) {
+                        BlockingQueue<Event> queue = queues.get(eventType);
+                        int queueSize = queue != null ? queue.size() : 0;
+                        log.info("Still processing {} events - {} events remaining in queue", 
+                                eventType, queueSize);
+                    }
+                    
+                    log.info("All {} events completed successfully", eventType);
+                    
+                } catch (InterruptedException e) {
+                    log.warn("Shutdown interrupted while waiting for {} executor to terminate", eventType);
+                    log.info("Attempting to continue processing remaining {} events despite interruption", eventType);
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
+        
+        // Final queue size check
+        logQueueSizes();
+        log.info("Event Processing Service shutdown completed - all events processed");
+    }
+    
+    /**
+     * Log current queue sizes for monitoring during shutdown
+     */
+    private void logQueueSizes() {
+        for (EventType eventType : EventType.values()) {
+            BlockingQueue<Event> queue = queues.get(eventType);
+            if (queue != null) {
+                log.info("{} queue size: {}", eventType, queue.size());
+            }
         }
     }
 
