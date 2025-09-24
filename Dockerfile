@@ -11,8 +11,8 @@ WORKDIR /app
 COPY .mvn/ .mvn/
 COPY mvnw pom.xml ./
 
-# Make Maven wrapper executable
-RUN chmod +x ./mvnw
+# Fix line endings and make Maven wrapper executable (cross-platform compatibility)
+RUN dos2unix ./mvnw 2>/dev/null || sed -i 's/\r$//' ./mvnw && chmod +x ./mvnw
 
 # Download dependencies (this layer will be cached if pom.xml doesn't change)
 RUN ./mvnw dependency:go-offline -B
