@@ -4,8 +4,14 @@ import com.eventnotification.dto.EventRequest;
 import com.eventnotification.dto.EventResponse;
 import com.eventnotification.model.EventPayload;
 import com.eventnotification.model.EventType;
+import com.eventnotification.model.EmailPayload;
+import com.eventnotification.model.SmsPayload;
+import com.eventnotification.model.PushPayload;
 import com.eventnotification.model.Event;
 import com.eventnotification.service.EventProcessingService;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.validation.Valid;
 
@@ -31,6 +37,9 @@ public class EventController {
 
     @Autowired
     private EventProcessingService eventProcessingService;
+    
+    @Autowired
+    private ObjectMapper objectMapper;
 
     /**
      * Create a new event for processing
@@ -57,13 +66,16 @@ public class EventController {
         }
 
         try {
-            // Validate payload based on event type
-            validateEventPayload(eventRequest.getEventType(), eventRequest.getPayload());
+            // Convert JsonNode to EventPayload based on event type
+            EventPayload eventPayload = convertToEventPayload(eventRequest.getEventType(), eventRequest.getPayload());
+            
+            // Validate payload
+            validateEventPayload(eventRequest.getEventType(), eventPayload);
             
             // Create event
             Event event = new Event(
                 eventRequest.getEventType(),
-                eventRequest.getPayload(),
+                eventPayload,
                 eventRequest.getCallbackUrl()
             );
 
@@ -185,6 +197,18 @@ public class EventController {
 
         // Call payload-specific validation
         payload.validate();
+    }
+
+    private EventPayload convertToEventPayload(EventType eventType, JsonNode payloadNode) {
+        try {
+            return switch (eventType) {
+                case EMAIL -> objectMapper.treeToValue(payloadNode, EmailPayload.class);
+                case SMS -> objectMapper.treeToValue(payloadNode, SmsPayload.class);
+                case PUSH -> objectMapper.treeToValue(payloadNode, PushPayload.class);
+            };
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid payload for event type " + eventType + ": " + e.getMessage(), e);
+        }
     }
 
 

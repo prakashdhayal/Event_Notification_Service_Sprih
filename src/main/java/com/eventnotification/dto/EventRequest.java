@@ -1,13 +1,12 @@
 package com.eventnotification.dto;
 
-import com.eventnotification.model.EventPayload;
 import com.eventnotification.model.EventType;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
@@ -24,9 +23,8 @@ public class EventRequest {
     private EventType eventType;
     
     @NotNull(message = "Payload is required")
-    @Valid
     @JsonProperty("payload")
-    private EventPayload payload;
+    private JsonNode payload;
     
     @NotBlank(message = "Callback URL is required")
     @JsonProperty("callbackUrl")
